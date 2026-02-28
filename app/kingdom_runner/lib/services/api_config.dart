@@ -1,6 +1,6 @@
 class ApiConfig {
   // Production backend URL
-  static const String baseUrl = 'https://bhago-pro.onrender.com';
+  static const String baseUrl = 'https://bhago-pro-jyh0.onrender.com';
   // static const String baseUrl = 'http://10.0.2.2:3000'; // for Android emulator
   // static const String baseUrl = 'http://localhost:3000'; // for iOS simulator
 

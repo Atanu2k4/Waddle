@@ -101,6 +101,64 @@ exports.createTerritory = async (req, res) => {
   }
 };
 
+// Merge nearby territories
+exports.mergeTerritories = async (req, res) => {
+  try {
+    console.log('🤝 MERGE TERRITORIES REQUEST RECEIVED');
+    const { territoryIds, mergedPath, mergedArea } = req.body;
+
+    console.log(`Merging territories: ${territoryIds.join(', ')}`);
+    console.log(`Merged path points: ${mergedPath.length}, Area: ${mergedArea} m²`);
+
+    // Verify both territories belong to the user
+    const territories = await Territory.find({
+      _id: { $in: territoryIds },
+      userId: req.user._id,
+      isActive: true
+    });
+
+    if (territories.length !== territoryIds.length) {
+      return res.status(400).json({ error: 'Invalid territories or not owned by user' });
+    }
+
+    // Deactivate old territories
+    await Territory.updateMany(
+      { _id: { $in: territoryIds } },
+      { isActive: false }
+    );
+
+    // Create merged territory
+    const mergedTerritory = new Territory({
+      userId: req.user._id,
+      username: req.user.username,
+      polygon: mergedPath,
+      area: mergedArea,
+    });
+
+    await mergedTerritory.save();
+    console.log(`✅ Merged territory created: ${mergedTerritory._id}`);
+
+    // Update user's total territory size
+    const userTerritories = await Territory.find({ 
+      userId: req.user._id, 
+      isActive: true 
+    });
+    const totalArea = userTerritories.reduce((sum, t) => sum + t.area, 0);
+    
+    await User.findByIdAndUpdate(req.user._id, {
+      territorySize: totalArea,
+      lastActivity: new Date(),
+    });
+    
+    console.log(`✅ User territory updated after merge: ${totalArea.toFixed(2)} m²`);
+
+    res.status(201).json(mergedTerritory);
+  } catch (error) {
+    console.error('Merge territories error:', error);
+    res.status(500).json({ error: 'Server error merging territories', details: error.message });
+  }
+};
+
 // Get user territories
 exports.getUserTerritories = async (req, res) => {
   try {

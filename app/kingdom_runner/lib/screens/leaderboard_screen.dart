@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../models/user.dart';
 import '../services/api_service.dart';
 import '../widgets/shimmer_loading.dart';
 import '../utils/format_utils.dart';
+import '../providers/theme_provider.dart';
+import 'user_profile_screen.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -44,6 +47,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Leaderboard')),
       body: Column(
@@ -157,10 +163,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.05),
+                                        color: isDarkMode
+                                            ? Colors.white.withOpacity(0.05)
+                                            : Colors.black.withOpacity(0.08),
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
-                                          color: Colors.white.withOpacity(0.1),
+                                          color: isDarkMode
+                                              ? Colors.white.withOpacity(0.1)
+                                              : Colors.black.withOpacity(0.15),
                                           width: 1.5,
                                         ),
                                         boxShadow: [
@@ -179,7 +189,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                           borderRadius: BorderRadius.circular(
                                             16,
                                           ),
-                                          onTap: () {},
+                                          onTap: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    UserProfileScreen(
+                                                      user: user,
+                                                      rank: rank,
+                                                    ),
+                                              ),
+                                            );
+                                          },
                                           child: Padding(
                                             padding: const EdgeInsets.all(16.0),
                                             child: Row(
@@ -189,11 +209,23 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                                   height: 50,
                                                   decoration: BoxDecoration(
                                                     shape: BoxShape.circle,
-                                                    color: Colors.white
-                                                        .withOpacity(0.1),
+                                                    color: isDarkMode
+                                                        ? Colors.white
+                                                              .withOpacity(0.1)
+                                                        : Colors.black
+                                                              .withOpacity(
+                                                                0.08,
+                                                              ),
                                                     border: Border.all(
-                                                      color: Colors.white
-                                                          .withOpacity(0.3),
+                                                      color: isDarkMode
+                                                          ? Colors.white
+                                                                .withOpacity(
+                                                                  0.3,
+                                                                )
+                                                          : Colors.black
+                                                                .withOpacity(
+                                                                  0.2,
+                                                                ),
                                                       width: 2,
                                                     ),
                                                   ),
@@ -201,20 +233,29 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                                     child: rank <= 3
                                                         ? Icon(
                                                             Icons.star,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                  0.8,
-                                                                ),
+                                                            color: isDarkMode
+                                                                ? Colors.white
+                                                                      .withOpacity(
+                                                                        0.8,
+                                                                      )
+                                                                : Colors.black
+                                                                      .withOpacity(
+                                                                        0.7,
+                                                                      ),
                                                             size: 24,
                                                           )
                                                         : Text(
                                                             '$rank',
                                                             style: TextStyle(
-                                                              color: Colors
-                                                                  .white
-                                                                  .withOpacity(
-                                                                    0.8,
-                                                                  ),
+                                                              color: isDarkMode
+                                                                  ? Colors.white
+                                                                        .withOpacity(
+                                                                          0.8,
+                                                                        )
+                                                                  : Colors.black
+                                                                        .withOpacity(
+                                                                          0.7,
+                                                                        ),
                                                               fontWeight:
                                                                   FontWeight
                                                                       .bold,
@@ -236,6 +277,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                                           fontSize: 16,
                                                           fontWeight:
                                                               FontWeight.bold,
+                                                          color: isDarkMode
+                                                              ? Colors.white
+                                                              : Colors.black87,
                                                         ),
                                                       ),
                                                       const SizedBox(height: 4),
@@ -244,10 +288,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                                           Icon(
                                                             icon,
                                                             size: 16,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                  0.6,
-                                                                ),
+                                                            color: isDarkMode
+                                                                ? Colors.white
+                                                                      .withOpacity(
+                                                                        0.6,
+                                                                      )
+                                                                : Colors.black
+                                                                      .withOpacity(
+                                                                        0.6,
+                                                                      ),
                                                           ),
                                                           const SizedBox(
                                                             width: 6,
@@ -256,11 +305,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                                             value,
                                                             style: TextStyle(
                                                               fontSize: 14,
-                                                              color: Colors
-                                                                  .white
-                                                                  .withOpacity(
-                                                                    0.6,
-                                                                  ),
+                                                              color: isDarkMode
+                                                                  ? Colors.white
+                                                                        .withOpacity(
+                                                                          0.6,
+                                                                        )
+                                                                  : Colors.black
+                                                                        .withOpacity(
+                                                                          0.6,
+                                                                        ),
                                                               fontWeight:
                                                                   FontWeight
                                                                       .w500,
@@ -273,8 +326,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                                 ),
                                                 Icon(
                                                   Icons.chevron_right,
-                                                  color: Colors.white
-                                                      .withOpacity(0.3),
+                                                  color: isDarkMode
+                                                      ? Colors.white
+                                                            .withOpacity(0.3)
+                                                      : Colors.black
+                                                            .withOpacity(0.25),
                                                   size: 24,
                                                 ),
                                               ],

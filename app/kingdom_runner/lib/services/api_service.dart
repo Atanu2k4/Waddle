@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/user.dart';
 import '../models/territory.dart';
 import '../models/activity_session.dart';
@@ -166,7 +167,13 @@ class ApiService {
       print('📄 Response body: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return Territory.fromJson(jsonDecode(response.body));
+        final newTerritory = Territory.fromJson(jsonDecode(response.body));
+
+        // Check for nearby territories to merge
+        print('🔍 Checking for nearby territories to merge...');
+        await _checkAndMergeTerritories(newTerritory);
+
+        return newTerritory;
       } else {
         throw Exception('Failed to create territory: ${response.body}');
       }
@@ -174,6 +181,130 @@ class ApiService {
       print('❌ Territory creation error: $e');
       print('📚 Stack trace: $stackTrace');
       rethrow;
+    }
+  }
+
+  Future<List<Territory>> getUserTerritories(String userId) async {
+    await token;
+    final headers = await getHeaders();
+    final response = await http.get(
+      Uri.parse(
+        '${ApiConfig.baseUrl}${ApiConfig.territoryEndpoint}/user/$userId',
+      ),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      final territories = data.map((json) => Territory.fromJson(json)).toList();
+      print('🗺️ Loaded ${territories.length} territories for user $userId');
+      return territories;
+    } else {
+      throw Exception('Failed to load user territories: ${response.body}');
+    }
+  }
+
+  Future<void> _checkAndMergeTerritories(Territory newTerritory) async {
+    try {
+      // Get user's territories
+      final userId = newTerritory.userId;
+      final territories = await getUserTerritories(userId);
+
+      // Check each territory for overlap/proximity
+      for (final existingTerritory in territories) {
+        if (existingTerritory.id == newTerritory.id) continue;
+
+        // Check if territories are close (within 50 meters)
+        final shouldMerge = _shouldMergeTerritories(
+          newTerritory,
+          existingTerritory,
+        );
+
+        if (shouldMerge) {
+          print(
+            '🤝 Merging territories: ${newTerritory.id} + ${existingTerritory.id}',
+          );
+          await _mergeTerritories(newTerritory, existingTerritory);
+          break; // Only merge once per creation
+        }
+      }
+    } catch (e) {
+      print('⚠️ Territory merge check failed: $e');
+      // Don't fail territory creation if merge check fails
+    }
+  }
+
+  bool _shouldMergeTerritories(Territory t1, Territory t2) {
+    // Check if any point from t1 is close to any point from t2
+    const mergeDistanceMeters = 50.0; // Merge if within 50 meters
+
+    for (final p1 in t1.polygon) {
+      for (final p2 in t2.polygon) {
+        final distance = _calculateDistanceLatLng(p1, p2);
+        if (distance < mergeDistanceMeters) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  double _calculateDistanceLatLng(LatLng point1, LatLng point2) {
+    const R = 6371000.0; // Earth radius in meters
+    final lat1 = point1.latitude * 3.14159 / 180;
+    final lat2 = point2.latitude * 3.14159 / 180;
+    final dLat = lat2 - lat1;
+    final dLon = (point2.longitude - point1.longitude) * 3.14159 / 180;
+
+    final a =
+        (dLat / 2) * (dLat / 2) +
+        lat1.abs() * lat2.abs() * (dLon / 2) * (dLon / 2);
+    final c = 2 * (a.abs());
+
+    return R * c;
+  }
+
+  Future<void> _mergeTerritories(
+    Territory newTerritory,
+    Territory existingTerritory,
+  ) async {
+    try {
+      await token;
+      final headers = await getHeaders();
+
+      // Combine polygons from both territories
+      final mergedPolygon = [
+        ...newTerritory.polygon,
+        ...existingTerritory.polygon,
+      ];
+
+      // Convert LatLng to map format for API
+      final mergedPath = mergedPolygon
+          .map((point) => {'lat': point.latitude, 'lng': point.longitude})
+          .toList();
+
+      // Calculate new area (sum of both)
+      final mergedArea = newTerritory.area + existingTerritory.area;
+
+      final mergeRequest = {
+        'territoryIds': [newTerritory.id, existingTerritory.id],
+        'mergedPath': mergedPath,
+        'mergedArea': mergedArea,
+      };
+
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.territoryEndpoint}/merge'),
+        headers: headers,
+        body: jsonEncode(mergeRequest),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Territories merged successfully');
+      } else {
+        print('⚠️ Territory merge failed: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Territory merge error: $e');
     }
   }
 

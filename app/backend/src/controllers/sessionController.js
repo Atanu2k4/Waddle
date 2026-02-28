@@ -72,15 +72,37 @@ exports.completeSession = async (req, res) => {
     user.totalDistance += calculatedDistance;
     user.lastActivity = new Date();
     
-    // Update activity streak
-    const daysSinceLastActivity = Math.floor(
-      (new Date() - new Date(user.lastActivity)) / (1000 * 60 * 60 * 24)
-    );
+    // Update activity streak (only once per day)
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    if (daysSinceLastActivity <= 1) {
-      user.activityStreak += 1;
-    } else if (daysSinceLastActivity > 3) {
-      user.activityStreak = 1;
+    // Get the last streak update date (set to beginning of that day)
+    const lastStreakDate = user.lastStreakUpdate 
+      ? new Date(
+          user.lastStreakUpdate.getFullYear(),
+          user.lastStreakUpdate.getMonth(),
+          user.lastStreakUpdate.getDate()
+        )
+      : null;
+    
+    // Only update streak if this is the first session of the day
+    if (!lastStreakDate || today.getTime() !== lastStreakDate.getTime()) {
+      const daysSinceLastStreak = lastStreakDate
+        ? Math.floor((today - lastStreakDate) / (1000 * 60 * 60 * 24))
+        : 0;
+      
+      if (daysSinceLastStreak === 1) {
+        // Consecutive day - increment streak
+        user.activityStreak += 1;
+      } else if (daysSinceLastStreak === 0 || !lastStreakDate) {
+        // First ever session - start streak
+        user.activityStreak = 1;
+      } else {
+        // Missed days - reset streak
+        user.activityStreak = 1;
+      }
+      
+      user.lastStreakUpdate = now;
     }
 
     await user.save();
