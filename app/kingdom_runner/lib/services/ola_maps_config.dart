@@ -75,10 +75,26 @@ class OlaMapsConfig {
 
   // Get tile URL with API key (light theme)
   static String getTileUrl({bool isDark = false}) {
+    // Use OpenStreetMap/CartoDB as primary provider (no rate limits)
+    // Ola Maps has strict rate limiting and causes 429 errors
+    print('🗺️ Using OpenStreetMap tiles (free, no rate limits)');
+    return isDark
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+    /* Ola Maps - Commented out due to rate limiting (429 errors)
+    if (_apiKey == null || _apiKey!.isEmpty) {
+      print('⚠️ Ola Maps API key not loaded, using OpenStreetMap fallback');
+      return isDark
+          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+          : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+    
     final style = isDark ? 'default-dark-standard' : 'default-light-standard';
     final url =
         'https://api.olamaps.io/tiles/vector/v1/styles/$style/{z}/{x}/{y}.png';
     return '$url?api_key=$apiKey';
+    */
   }
 
   // Get headers for API requests

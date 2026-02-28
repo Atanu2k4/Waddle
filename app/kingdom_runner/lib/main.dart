@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/auth_provider.dart';
 import 'providers/activity_provider.dart';
 import 'providers/territory_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/ola_maps_config.dart';
+import 'services/gemini_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
   // Load Ola Maps credentials from cache (if exists) before app starts
   await OlaMapsConfig.loadFromCache();
+  // Initialize Gemini API service
+  await GeminiService.initialize();
   runApp(const MyApp());
 }
 

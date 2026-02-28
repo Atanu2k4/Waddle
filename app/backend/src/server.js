@@ -52,7 +52,12 @@ app.get('/ping', (req, res) => {
 });
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://sahnik:vD5ZtaAKrBPRx29N@adifast.9p87bqm.mongodb.net/?appName=adiFast';
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI is not defined in environment variables');
+  process.exit(1);
+}
 
 mongoose.connect(MONGODB_URI)
 .then(() => {

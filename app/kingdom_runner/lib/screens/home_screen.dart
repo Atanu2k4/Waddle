@@ -25,7 +25,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final MapController _mapController = MapController();
   final LocationService _locationService = LocationService();
-  LatLng _currentPosition = const LatLng(28.6139, 77.2090); // Delhi default
+  LatLng _currentPosition = const LatLng(
+    22.5726,
+    88.3639,
+  ); // Kolkata default (will be replaced by GPS)
   bool _isLoadingLocation = true;
   bool _isCalibrating = false;
   int _calibrationReadings = 0;
@@ -34,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeOlaMaps();
     _loadLastLocation();
     _initializeLocation();
     _loadTerritories();
@@ -50,6 +54,17 @@ class _HomeScreenState extends State<HomeScreen> {
     _locationService.sensorService.onStepDetected = (steps) {
       // Step count tracking - can be used for analytics if needed
     };
+  }
+
+  Future<void> _initializeOlaMaps() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isAuthenticated) {
+      // Ensure Ola Maps is initialized with auth token
+      await OlaMapsConfig.loadFromCache();
+      print(
+        '🗺️ Ola Maps initialized - API Key loaded: ${OlaMapsConfig.apiKey.isNotEmpty}',
+      );
+    }
   }
 
   Future<void> _loadLastLocation() async {
@@ -80,66 +95,117 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initializeLocation() async {
+    print('📍 Initializing location services...');
     final hasPermission = await _locationService.checkPermissions();
-    if (hasPermission) {
-      final location = await _locationService.getCurrentLocation();
-      if (location != null && mounted) {
-        setState(() {
-          _currentPosition = location;
-          _isLoadingLocation = false;
-        });
-        _mapController.move(_currentPosition, 15);
-        await _saveLocation(location);
-      }
 
-      // Listen to location updates
-      _locationService.startTracking((newLocation) {
-        if (mounted) {
-          // Calibration logic - collect first 5 readings when calibrating
-          if (_isCalibrating && _calibrationReadings < 5) {
-            _calibrationReadings++;
-
-            if (_calibrationReadings >= 5) {
-              // Calibration complete
-              setState(() {
-                _isCalibrating = false;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('✓ Location calibrated'),
-                  duration: Duration(seconds: 2),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            } else {
-              setState(() {});
-            }
-          }
-
-          setState(() {
-            _currentPosition = newLocation;
-          });
-          _saveLocation(newLocation);
-
-          // Auto-follow user during tracking
-          final isTracking = Provider.of<ActivityProvider>(
-            context,
-            listen: false,
-          ).isTracking;
-          if (isTracking) {
-            _mapController.move(newLocation, _mapController.camera.zoom);
-          }
-        }
+    if (!hasPermission) {
+      print('❌ Location permission denied');
+      setState(() {
+        _isLoadingLocation = false;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Location permission required for map tracking',
+            ),
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: () async {
+                await _locationService.checkPermissions();
+              },
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    print('✅ Location permission granted, getting current position...');
+    final location = await _locationService.getCurrentLocation();
+
+    if (location != null && mounted) {
+      print(
+        '📍 GPS location obtained: ${location.latitude}, ${location.longitude}',
+      );
+      setState(() {
+        _currentPosition = location;
+        _isLoadingLocation = false;
+      });
+      _mapController.move(_currentPosition, 17);
+      await _saveLocation(location);
     } else {
+      print('⚠️ Could not get GPS location, using default');
       setState(() {
         _isLoadingLocation = false;
       });
     }
+
+    // Listen to location updates
+    _locationService.startTracking((newLocation) {
+      if (mounted) {
+        // Calibration logic - collect first 5 readings when calibrating
+        if (_isCalibrating && _calibrationReadings < 5) {
+          _calibrationReadings++;
+
+          if (_calibrationReadings >= 5) {
+            // Calibration complete
+            setState(() {
+              _isCalibrating = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✓ Location calibrated'),
+                duration: Duration(seconds: 2),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            setState(() {});
+          }
+        }
+
+        setState(() {
+          _currentPosition = newLocation;
+        });
+        _saveLocation(newLocation);
+
+        // Auto-follow user during tracking
+        final isTracking = Provider.of<ActivityProvider>(
+          context,
+          listen: false,
+        ).isTracking;
+        if (isTracking) {
+          _mapController.move(newLocation, _mapController.camera.zoom);
+        }
+      }
+    });
   }
 
-  void _recenterMap() {
-    _mapController.move(_currentPosition, 15);
+  Future<void> _recenterMap() async {
+    // Try to get fresh GPS location
+    final location = await _locationService.getCurrentLocation();
+    if (location != null && mounted) {
+      setState(() {
+        _currentPosition = location;
+      });
+      await _saveLocation(location);
+      _mapController.move(_currentPosition, 17);
+
+      // Show feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '📍 Location updated: ${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}',
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      // Just recenter to current position
+      _mapController.move(_currentPosition, 17);
+    }
   }
 
   Future<void> _loadTerritories() async {
@@ -198,6 +264,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Always show current location marker
     if (!_isLoadingLocation) {
+      // Pointer color based on theme: bright red (light mode), orange (dark mode)
+      final pointerColor = isDarkMode ? Colors.orange : Colors.red.shade600;
+
       markers.add(
         Marker(
           point: _currentPosition,
@@ -205,15 +274,15 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 50,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
+              color: pointerColor.withOpacity(0.3),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.8),
+                color: pointerColor.withOpacity(0.8),
                 width: 3,
               ),
             ),
             child: Center(
-              child: Icon(Icons.circle, color: Colors.white, size: 15),
+              child: Icon(Icons.circle, color: pointerColor, size: 15),
             ),
           ),
         ),
@@ -238,17 +307,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade900,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SizedBox.expand(
         child: Stack(
           children: [
-            // Map layer
+            // Map layer with brighter overlays in dark mode
             Positioned.fill(
               child: FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: _currentPosition,
-                  initialZoom: 19,
+                  initialZoom: 17,
                   minZoom: 3,
                   maxZoom: 19,
                   initialRotation: 0,
@@ -265,21 +334,37 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: isDarkMode
-                        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-                        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    subdomains: isDarkMode
-                        ? const ['a', 'b', 'c', 'd']
-                        : const [],
+                    urlTemplate: OlaMapsConfig.getTileUrl(isDark: isDarkMode),
                     userAgentPackageName: 'com.example.kingdom_runner',
                     maxZoom: 19,
+                    tileSize: 256,
+                    // Subdomains for load balancing (CartoDB dark mode)
+                    subdomains: isDarkMode
+                        ? const ['a', 'b', 'c', 'd']
+                        : const ['a', 'b', 'c'],
+                    // Enable tile caching
+                    tileProvider: NetworkTileProvider(),
+                    // Reduce tile loading
+                    keepBuffer: 2,
+                    panBuffer: 1,
+                    errorTileCallback: (tile, error, stackTrace) {
+                      // Don't spam console with tile errors
+                      if (error.toString().contains('429')) {
+                        print(
+                          '⚠️ Rate limit reached (switching to OSM recommended)',
+                        );
+                      }
+                    },
                   ),
                   PolygonLayer(polygons: polygons),
                   PolylineLayer(polylines: polylines),
                   MarkerLayer(markers: markers),
                   RichAttributionWidget(
                     attributions: [
-                      TextSourceAttribution('OpenStreetMap', onTap: () {}),
+                      TextSourceAttribution(
+                        'OpenStreetMap contributors',
+                        onTap: () {},
+                      ),
                     ],
                   ),
                 ],
@@ -317,11 +402,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: isDarkMode
-                            ? Colors.white.withOpacity(0.15)
+                            ? const Color(0xFFE4E4E7).withOpacity(
+                                0.95,
+                              ) // Bright zinc-200 for map
                             : Colors.white.withOpacity(0.9),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: isDarkMode
+                              ? const Color(0xFFF4F4F5).withOpacity(
+                                  0.6,
+                                ) // zinc-100
+                              : Colors.white.withOpacity(0.2),
                           width: 1.5,
                         ),
                       ),
@@ -334,7 +425,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.all(12),
                             child: Icon(
                               Icons.my_location,
-                              color: isDarkMode ? Colors.white : Colors.black87,
+                              color: isDarkMode
+                                  ? Colors.black87
+                                  : Colors.black87,
                               size: 24,
                             ),
                           ),
@@ -516,12 +609,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: isDarkMode
-                            ? Colors.black.withOpacity(0.3)
+                            ? const Color(0xFFE4E4E7).withOpacity(
+                                0.95,
+                              ) // Bright zinc-200 for map
                             : Colors.white.withOpacity(0.9),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isDarkMode
-                              ? Colors.white.withOpacity(0.1)
+                              ? const Color(0xFFF4F4F5).withOpacity(
+                                  0.5,
+                                ) // zinc-100
                               : Colors.white.withOpacity(0.5),
                           width: 1.5,
                         ),
@@ -532,7 +629,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Column(
                             children: [
-                              Icon(Icons.straighten, size: 28),
+                              Icon(
+                                Icons.straighten,
+                                size: 28,
+                                color: Colors.black87,
+                              ),
                               const SizedBox(height: 8),
                               Text(
                                 formatDistance(
@@ -541,9 +642,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.black87,
+                                  color: Colors.black87,
                                 ),
                               ),
                               Text(
@@ -552,9 +651,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ).split(' ')[1],
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDarkMode
-                                      ? Colors.white70
-                                      : Colors.black54,
+                                  color: Colors.black54,
                                 ),
                               ),
                             ],
@@ -562,31 +659,29 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             width: 1,
                             height: 60,
-                            color: isDarkMode
-                                ? Colors.white.withOpacity(0.2)
-                                : Colors.black.withOpacity(0.1),
+                            color: Colors.black.withOpacity(0.1),
                           ),
                           Column(
                             children: [
-                              Icon(Icons.timeline, size: 28),
+                              Icon(
+                                Icons.timeline,
+                                size: 28,
+                                color: Colors.black87,
+                              ),
                               const SizedBox(height: 8),
                               Text(
                                 '${activityProvider.currentPath.length}',
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.black87,
+                                  color: Colors.black87,
                                 ),
                               ),
                               Text(
                                 'points',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDarkMode
-                                      ? Colors.white70
-                                      : Colors.black54,
+                                  color: Colors.black54,
                                 ),
                               ),
                             ],
@@ -601,7 +696,9 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_isCalibrating)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withOpacity(0.7),
+                  color: (isDarkMode
+                      ? Colors.black.withOpacity(0.7)
+                      : Colors.black.withOpacity(0.7)),
                   child: Center(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
