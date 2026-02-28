@@ -84,23 +84,14 @@ flutter pub get
   - Physical Device: `http://YOUR_LOCAL_IP:3000`
   - Production: Your deployed backend URL
 
-4. Add Google Maps API Key:
+4. Map Configuration:
 
-**For Android:**
-- Open `android/app/src/main/AndroidManifest.xml`
-- Add your Google Maps API key:
-```xml
-<meta-data
-    android:name="com.google.android.geo.API_KEY"
-    android:value="YOUR_ANDROID_API_KEY_HERE"/>
-```
+**Current Setup:** The app uses OpenStreetMap tiles (free, no rate limits).
 
-**For iOS:**
-- Open `ios/Runner/AppDelegate.swift`
-- Add your Google Maps API key:
-```swift
-GMSServices.provideAPIKey("YOUR_IOS_API_KEY_HERE")
-```
+**Note about Ola Maps:** We initially configured Ola Maps, but encountered rate limiting (HTTP 429 errors) during development. The Ola Maps configuration is preserved in the code but commented out. To re-enable Ola Maps:
+- Ensure you have sufficient API quota
+- Uncomment the Ola Maps section in `lib/services/ola_maps_config.dart`
+- Backend credentials are already configured in `.env`
 
 5. Enable location permissions:
 
@@ -196,7 +187,10 @@ flutter run
 ## 🛠️ Technologies Used
 
 ### Frontend (Flutter)
-- **google_maps_flutter** - Map integration
+- **flutter_map** - Open-source map widget
+- **OpenStreetMap** - Free map tiles (primary)
+- **CartoDB** - Dark mode map tiles
+- **Ola Maps** - Configured but disabled due to rate limits
 - **geolocator** - GPS location services
 - **provider** - State management
 - **http/dio** - API communication
@@ -256,11 +250,18 @@ flutter run
 Backend `.env` file:
 ```
 PORT=3000
-MONGODB_URI=mongodb+srv://sahnik:vD5ZtaAKrBPRx29N@adifast.9p87bqm.mongodb.net/?appName=adiFast
-JWT_SECRET=kingdom-runner-secret-key-change-in-production
+NODE_ENV=development
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_strong_jwt_secret_key
 ACTIVITY_THRESHOLD_DAYS=3
 CLOSED_LOOP_THRESHOLD_METERS=50
+OLA_MAPS_PROJECT_ID=your_ola_maps_project_id
+OLA_MAPS_API_KEY=your_ola_maps_api_key
+OLA_MAPS_CLIENT_ID=your_ola_maps_client_id
+OLA_MAPS_CLIENT_SECRET=your_ola_maps_client_secret
 ```
+
+**Note:** A `.env.example` file is provided in the backend directory. Copy it to `.env` and fill in your actual values.
 
 ## 🚧 Future Enhancements
 

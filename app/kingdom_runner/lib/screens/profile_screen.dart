@@ -98,17 +98,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         shape: BoxShape.circle,
                         color: Colors.blue.withOpacity(0.1),
                       ),
-                      child: CircleAvatar(
-                        radius: 36,
-                        backgroundColor: Colors.blue.withOpacity(0.2),
-                        child: Text(
-                          user.username[0].toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      child: user.avatarPath != null
+                          ? CircleAvatar(
+                              radius: 36,
+                              backgroundImage: AssetImage(user.avatarPath!),
+                              backgroundColor: Colors.grey.shade100,
+                            )
+                          : CircleAvatar(
+                              radius: 36,
+                              backgroundColor: Colors.blue.withOpacity(0.2),
+                              child: Text(
+                                user.username[0].toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(height: 12),
                     Text(

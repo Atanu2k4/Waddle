@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/gemini_service.dart';
 import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  final int _totalPages = 5;
+  final int _totalPages = 6;
   bool _hasSwipedOnce = false;
 
   // Onboarding data
@@ -23,30 +24,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   double _weight = 70;
   double _heightCm = 170;
   double _dailyProtein = 50;
-  double _dailyCarbs = 250;
+  double _dailyCalories = 2000;
+
+  // Avatar selection
+  int _avatarCategoryIndex = 7; // default: vibrant
+  String _selectedAvatar = 'assets/avatars/vibrant/1.png';
+
+  static const List<Map<String, dynamic>> _avatarCategories = [
+    {'name': '3D', 'folder': '3d', 'count': 5},
+    {'name': 'Bluey', 'folder': 'bluey', 'count': 10},
+    {'name': 'Memo', 'folder': 'memo', 'count': 20},
+    {'name': 'Notion', 'folder': 'notion', 'count': 10},
+    {'name': 'Teams', 'folder': 'teams', 'count': 5},
+    {'name': 'Toons', 'folder': 'toons', 'count': 7},
+    {'name': 'Upstream', 'folder': 'upstream', 'count': 5},
+    {'name': 'Vibrant', 'folder': 'vibrant', 'count': 20},
+  ];
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
-  }
-
-  void _nextPage() {
-    if (_currentPage < _totalPages - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOutCubic,
-      );
-    }
-  }
-
-  void _prevPage() {
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOutCubic,
-      );
-    }
   }
 
   void _skipAll() async {
@@ -57,14 +55,439 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _completeOnboarding() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Save today's diet entry
+    await GeminiService.saveDietEntry(_dailyProtein, _dailyCalories);
+
     await authProvider.saveOnboardingData(
       dateOfBirth: _selectedDOB,
       weight: _weight,
       height: _heightCm,
       dailyProtein: _dailyProtein,
-      dailyCarbs: _dailyCarbs,
+      dailyCalories: _dailyCalories,
+      avatarPath: _selectedAvatar,
     );
     if (mounted) _goToDashboard();
+  }
+
+  Future<void> _showDietInputDialog() async {
+    // Create local controllers inside the dialog
+    final List<TextEditingController> localControllers = List.generate(
+      5,
+      (index) => TextEditingController(),
+    );
+
+    await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        bool isCalculating = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 24,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                constraints: const BoxConstraints(
+                  maxWidth: 500,
+                  maxHeight: 700,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                      spreadRadius: -2,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.restaurant_menu,
+                                  color: Color(0xFF059669),
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'Enter Your 5-Day Diet',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF111827),
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.pop(context, false);
+                                  Future.delayed(
+                                    const Duration(milliseconds: 100),
+                                    () {
+                                      for (var c in localControllers) {
+                                        c.dispose();
+                                      }
+                                    },
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.close,
+                                  size: 20,
+                                  color: Color(0xFF6B7280),
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Describe what you ate each day. Be as detailed as possible.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: List.generate(5, (index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Day ${index + 1}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF059669),
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller: localControllers[index],
+                                    maxLines: 3,
+                                    keyboardType: TextInputType.multiline,
+                                    textInputAction: TextInputAction.newline,
+                                    autofocus: index == 0,
+                                    enableInteractiveSelection: true,
+                                    style: const TextStyle(
+                                      color: Color(0xFF111827),
+                                      fontSize: 14,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          'e.g., 2 eggs, oatmeal, chicken salad...',
+                                      hintStyle: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF9CA3AF),
+                                      ),
+                                      filled: true,
+                                      fillColor: const Color(0xFFF9FAFB),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFE5E7EB),
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFE5E7EB),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFF059669),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      contentPadding: const EdgeInsets.all(12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
+
+                    // Bottom button
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: isCalculating
+                          ? const Column(
+                              children: [
+                                CircularProgressIndicator(
+                                  color: Color(0xFF059669),
+                                  strokeWidth: 3,
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  'Analyzing your diet...',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  if (localControllers.every(
+                                    (c) => c.text.trim().isEmpty,
+                                  )) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Please enter at least one day of diet',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  setDialogState(() => isCalculating = true);
+
+                                  final foodDays = localControllers
+                                      .map((c) => c.text.trim())
+                                      .where((text) => text.isNotEmpty)
+                                      .toList();
+
+                                  final nutritionData =
+                                      await GeminiService.analyzeFoodItems(
+                                        foodDays,
+                                      );
+
+                                  setDialogState(() => isCalculating = false);
+
+                                  if (nutritionData != null) {
+                                    final days = foodDays.length;
+                                    final avgProtein =
+                                        nutritionData['protein']! / days;
+                                    final avgCalories =
+                                        nutritionData['calories']! / days;
+
+                                    // Close dialog first
+                                    Navigator.pop(context, true);
+
+                                    // Dispose controllers after dialog is closed
+                                    Future.delayed(
+                                      const Duration(milliseconds: 100),
+                                      () {
+                                        for (var c in localControllers) {
+                                          c.dispose();
+                                        }
+                                      },
+                                    );
+
+                                    setState(() {
+                                      _dailyProtein = avgProtein.clamp(
+                                        0.0,
+                                        300.0,
+                                      );
+                                      _dailyCalories = avgCalories.clamp(
+                                        500.0,
+                                        5000.0,
+                                      );
+                                    });
+
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          behavior: SnackBarBehavior.floating,
+                                          margin: const EdgeInsets.all(16),
+                                          padding: const EdgeInsets.all(16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                          ),
+                                          backgroundColor: Colors.transparent,
+                                          elevation: 0,
+                                          content: Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: const Color(0xFF10B981),
+                                                width: 1.5,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.08),
+                                                  blurRadius: 16,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(
+                                                    8,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                      0xFF10B981,
+                                                    ).withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.check_circle,
+                                                    color: Color(0xFF059669),
+                                                    size: 24,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    '${avgProtein.toStringAsFixed(0)}g protein, ${avgCalories.toStringAsFixed(0)} kcal per day',
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF111827),
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Failed to analyze diet. Check console for details or try again.',
+                                          ),
+                                          backgroundColor: Colors.red,
+                                          duration: Duration(seconds: 5),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  shadowColor: Colors.transparent,
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF059669),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF059669,
+                                        ).withOpacity(0.2),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(
+                                        Icons.analytics_outlined,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Calculate Nutrition',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _goToDashboard() {
@@ -76,10 +499,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOutCubic;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          final tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           return SlideTransition(
-              position: animation.drive(tween), child: child);
+            position: animation.drive(tween),
+            child: child,
+          );
         },
       ),
     );
@@ -115,8 +542,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 // Progress + Skip
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   child: Row(
                     children: [
                       // Progress dots
@@ -125,8 +554,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           children: List.generate(_totalPages, (i) {
                             return Expanded(
                               child: Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 2),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                ),
                                 height: 4,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(2),
@@ -173,7 +603,70 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       _buildWeightPage(),
                       _buildHeightPage(),
                       _buildDietPage(),
+                      _buildAvatarPage(),
                       _buildCompletePage(),
+                    ],
+                  ),
+                ),
+
+                // Navigation Buttons (for web/testing)
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Back Button
+                      if (_currentPage > 0)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            _pageController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          icon: const Icon(Icons.arrow_back, size: 18),
+                          label: const Text('Back'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.9),
+                            foregroundColor: Colors.black87,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 100),
+
+                      // Next Button
+                      if (_currentPage < _totalPages - 1)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          icon: const Icon(Icons.arrow_forward, size: 18),
+                          label: const Text('Next'),
+                          iconAlignment: IconAlignment.end,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.9),
+                            foregroundColor: Colors.black87,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 100),
                     ],
                   ),
                 ),
@@ -201,8 +694,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/birthday-calender.svg',
-                    width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                    width: 56,
+                    height: 56,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -217,10 +714,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'This helps us personalize your experience',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 28),
 
@@ -257,8 +751,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   letterSpacing: -0.408,
                                 ),
                               ),
-                              const Icon(Icons.chevron_right,
-                                  color: Color(0xFFFF3B30), size: 20),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Color(0xFFFF3B30),
+                                size: 20,
+                              ),
                             ],
                           ),
                         ),
@@ -316,8 +813,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/weight-1.svg',
-                    width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                    width: 56,
+                    height: 56,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -332,10 +833,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'We\'ll track your progress over time',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 36),
 
@@ -376,8 +874,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       thumbColor: Colors.white,
                       overlayColor: const Color(0xFF007AFF).withOpacity(0.1),
                       trackHeight: 4,
-                      thumbShape:
-                          const RoundSliderThumbShape(enabledThumbRadius: 14),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 14,
+                      ),
                     ),
                     child: Slider(
                       value: _weight,
@@ -391,14 +890,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('30 kg',
-                            style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 12)),
-                        Text('200 kg',
-                            style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 12)),
+                        Text(
+                          '30 kg',
+                          style: TextStyle(color: Colors.black45, fontSize: 12),
+                        ),
+                        Text(
+                          '200 kg',
+                          style: TextStyle(color: Colors.black45, fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
@@ -429,8 +928,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/height.svg',
-                    width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                    width: 56,
+                    height: 56,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -445,10 +948,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Helps calculate your fitness metrics',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 36),
 
@@ -482,10 +982,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '${(_heightCm / 30.48).floor()}\'${((_heightCm / 2.54) % 12).round()}" ft',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 15, color: Colors.black54),
                   ),
                   const SizedBox(height: 24),
 
@@ -497,8 +994,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       thumbColor: Colors.white,
                       overlayColor: const Color(0xFF007AFF).withOpacity(0.1),
                       trackHeight: 4,
-                      thumbShape:
-                          const RoundSliderThumbShape(enabledThumbRadius: 14),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 14,
+                      ),
                     ),
                     child: Slider(
                       value: _heightCm,
@@ -512,14 +1010,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('100 cm',
-                            style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 12)),
-                        Text('250 cm',
-                            style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 12)),
+                        Text(
+                          '100 cm',
+                          style: TextStyle(color: Colors.black45, fontSize: 12),
+                        ),
+                        Text(
+                          '250 cm',
+                          style: TextStyle(color: Colors.black45, fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
@@ -550,8 +1048,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/food-nutrition.svg',
-                    width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                    width: 56,
+                    height: 56,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -566,10 +1068,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'How much do you consume daily?',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 32),
 
@@ -586,16 +1085,104 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Carbs
+                  // Calories
                   _buildNutrientInput(
-                    label: 'Carbs',
-                    value: _dailyCarbs,
-                    unit: 'g/day',
-                    min: 0,
-                    max: 500,
+                    label: 'Calories',
+                    value: _dailyCalories,
+                    unit: 'kcal/day',
+                    min: 500,
+                    max: 5000,
                     color: const Color(0xFFFF6B6B),
-                    icon: Icons.grain,
-                    onChanged: (v) => setState(() => _dailyCarbs = v),
+                    icon: Icons.local_fire_department_outlined,
+                    onChanged: (v) => setState(() => _dailyCalories = v),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // OR divider
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Divider(color: Colors.black12, thickness: 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black45,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                      const Expanded(
+                        child: Divider(color: Colors.black12, thickness: 1),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Measure using diet button
+                  GestureDetector(
+                    onTap: _showDietInputDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF059669).withOpacity(0.8),
+                            const Color(0xFF10B981).withOpacity(0.8),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF34D399).withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF059669).withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                            spreadRadius: 0,
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withOpacity(0.2),
+                            blurRadius: 40,
+                            offset: const Offset(0, 16),
+                            spreadRadius: -8,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(
+                            Icons.eco_outlined,
+                            color: Color(0xFFD1FAE5),
+                            size: 22,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Measure using your diet',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 32),
@@ -654,19 +1241,210 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             trackHeight: 6,
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
           ),
-          child: Slider(
-            value: value,
-            min: min,
-            max: max,
-            onChanged: onChanged,
-          ),
+          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
         ),
       ],
     );
   }
 
   // ─────────────────────────────────────────────
-  //  Step 5: Complete!
+  //  Step 5: Avatar Selection
+  // ─────────────────────────────────────────────
+  Widget _buildAvatarPage() {
+    final category = _avatarCategories[_avatarCategoryIndex];
+    final folder = category['folder'] as String;
+    final count = category['count'] as int;
+
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildGlassCard(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.face_retouching_natural,
+                          color: Color(0xFF059669),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Choose Your Avatar',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Pick one that represents you',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Selected preview
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF059669),
+                          width: 3,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF059669).withOpacity(0.2),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 36,
+                        backgroundImage: AssetImage(_selectedAvatar),
+                        backgroundColor: Colors.grey.shade100,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Category chips
+                  SizedBox(
+                    height: 34,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _avatarCategories.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, i) {
+                        final isSelected = i == _avatarCategoryIndex;
+                        return GestureDetector(
+                          onTap: () => setState(() => _avatarCategoryIndex = i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF059669)
+                                  : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFF059669)
+                                    : const Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            child: Text(
+                              _avatarCategories[i]['name'] as String,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.black54,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Avatar grid
+                  SizedBox(
+                    height: 280,
+                    child: GridView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
+                      itemCount: count,
+                      itemBuilder: (context, i) {
+                        final path = 'assets/avatars/$folder/${i + 1}.png';
+                        final isSelected = _selectedAvatar == path;
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedAvatar = path),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFF059669)
+                                    : const Color(0xFFE5E7EB),
+                                width: isSelected ? 3 : 1.5,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF059669,
+                                        ).withOpacity(0.25),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: CircleAvatar(
+                              backgroundImage: AssetImage(path),
+                              backgroundColor: Colors.grey.shade100,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  Step 6: Complete!
   // ─────────────────────────────────────────────
   Widget _buildCompletePage() {
     return Center(
@@ -693,8 +1471,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.check_rounded,
-                        size: 48, color: Colors.white),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 48,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -726,28 +1507,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: Colors.grey.shade300),
+                        border: Border.all(color: Colors.grey.shade300),
                       ),
                       child: Column(
                         children: [
                           if (_selectedDOB != null)
                             _buildSummaryRow(
-                                Icons.cake_outlined,
-                                'Birthday',
-                                '${_getMonthName(_selectedDOB!.month)} ${_selectedDOB!.day}, ${_selectedDOB!.year}'),
+                              Icons.cake_outlined,
+                              'Birthday',
+                              '${_getMonthName(_selectedDOB!.month)} ${_selectedDOB!.day}, ${_selectedDOB!.year}',
+                            ),
                           if (_weight != 70)
                             _buildSummaryRow(
-                                Icons.monitor_weight_outlined,
-                                'Weight',
-                                '${_weight.toStringAsFixed(0)} kg'),
+                              Icons.monitor_weight_outlined,
+                              'Weight',
+                              '${_weight.toStringAsFixed(0)} kg',
+                            ),
                           if (_heightCm != 170)
-                            _buildSummaryRow(Icons.height, 'Height',
-                                '${_heightCm.toStringAsFixed(0)} cm'),
-                          _buildSummaryRow(Icons.egg_outlined, 'Protein',
-                              '${_dailyProtein.toStringAsFixed(0)} g/day'),
-                          _buildSummaryRow(Icons.grain, 'Carbs',
-                              '${_dailyCarbs.toStringAsFixed(0)} g/day'),
+                            _buildSummaryRow(
+                              Icons.height,
+                              'Height',
+                              '${_heightCm.toStringAsFixed(0)} cm',
+                            ),
+                          _buildSummaryRow(
+                            Icons.egg_outlined,
+                            'Protein',
+                            '${_dailyProtein.toStringAsFixed(0)} g/day',
+                          ),
+                          _buildSummaryRow(
+                            Icons.local_fire_department_outlined,
+                            'Calories',
+                            '${_dailyCalories.toStringAsFixed(0)} kcal/day',
+                          ),
                         ],
                       ),
                     ),
@@ -816,10 +1607,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(width: 10),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black54,
-            ),
+            style: const TextStyle(fontSize: 14, color: Colors.black54),
           ),
           const Spacer(),
           Text(
@@ -893,8 +1681,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   String _getMonthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1];
   }

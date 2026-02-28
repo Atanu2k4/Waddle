@@ -13,7 +13,8 @@ class User {
   final double? weight; // in kg
   final double? height; // in cm
   final double? dailyProtein; // in grams
-  final double? dailyCarbs; // in grams
+  final double? dailyCalories; // in kcal
+  final String? avatarPath; // asset path e.g. assets/avatars/vibrant/1.png
   final bool onboardingCompleted;
 
   User({
@@ -29,7 +30,8 @@ class User {
     this.weight,
     this.height,
     this.dailyProtein,
-    this.dailyCarbs,
+    this.dailyCalories,
+    this.avatarPath,
     this.onboardingCompleted = false,
   });
 
@@ -55,9 +57,10 @@ class User {
       dailyProtein: json['dailyProtein'] != null
           ? (json['dailyProtein']).toDouble()
           : null,
-      dailyCarbs: json['dailyCarbs'] != null
-          ? (json['dailyCarbs']).toDouble()
+      dailyCalories: json['dailyCalories'] != null
+          ? (json['dailyCalories']).toDouble()
           : null,
+      avatarPath: json['avatarPath'] as String?,
       onboardingCompleted: json['onboardingCompleted'] ?? false,
     );
   }
@@ -76,7 +79,8 @@ class User {
       if (weight != null) 'weight': weight,
       if (height != null) 'height': height,
       if (dailyProtein != null) 'dailyProtein': dailyProtein,
-      if (dailyCarbs != null) 'dailyCarbs': dailyCarbs,
+      if (dailyCalories != null) 'dailyCalories': dailyCalories,
+      if (avatarPath != null) 'avatarPath': avatarPath,
       'onboardingCompleted': onboardingCompleted,
     };
   }

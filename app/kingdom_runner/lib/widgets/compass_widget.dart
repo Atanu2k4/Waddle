@@ -23,10 +23,14 @@ class CompassWidget extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isDark
-            ? const Color(0xFF18181B).withOpacity(0.95)
+            ? const Color(0xFFE4E4E7).withOpacity(
+                0.95,
+              ) // Bright zinc-200 for map visibility
             : Colors.white.withOpacity(0.95),
         border: Border.all(
-          color: isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7),
+          color: isDark
+              ? const Color(0xFFF4F4F5)
+              : const Color(0xFFE4E4E7), // zinc-100 : zinc-200
           width: 2,
         ),
         boxShadow: [

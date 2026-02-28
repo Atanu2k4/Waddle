@@ -199,18 +199,27 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                                 ),
                               ],
                             ),
-                            child: Center(
-                              child: Text(
-                                user.username.isNotEmpty
-                                    ? user.username[0].toUpperCase()
-                                    : '?',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: rankColor,
-                                ),
-                              ),
-                            ),
+                            child: user.avatarPath != null
+                                ? ClipOval(
+                                    child: Image.asset(
+                                      user.avatarPath!,
+                                      width: 80,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Center(
+                                    child: Text(
+                                      user.username.isNotEmpty
+                                          ? user.username[0].toUpperCase()
+                                          : '?',
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                        color: rankColor,
+                                      ),
+                                    ),
+                                  ),
                           ),
                           const SizedBox(height: 12),
                           Text(

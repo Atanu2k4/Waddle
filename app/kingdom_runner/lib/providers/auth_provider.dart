@@ -98,6 +98,30 @@ class AuthProvider extends ChangeNotifier {
   Future<void> loadCurrentUser() async {
     try {
       _currentUser = await _apiService.getCurrentUser();
+      // Merge locally-saved avatar path in case backend doesn't return it
+      if (_currentUser != null && _currentUser!.avatarPath == null) {
+        final prefs = await SharedPreferences.getInstance();
+        final savedAvatar = prefs.getString('onboarding_avatar');
+        if (savedAvatar != null) {
+          _currentUser = User(
+            id: _currentUser!.id,
+            email: _currentUser!.email,
+            username: _currentUser!.username,
+            totalDistance: _currentUser!.totalDistance,
+            territorySize: _currentUser!.territorySize,
+            activityStreak: _currentUser!.activityStreak,
+            lastActivity: _currentUser!.lastActivity,
+            createdAt: _currentUser!.createdAt,
+            dateOfBirth: _currentUser!.dateOfBirth,
+            weight: _currentUser!.weight,
+            height: _currentUser!.height,
+            dailyProtein: _currentUser!.dailyProtein,
+            dailyCalories: _currentUser!.dailyCalories,
+            avatarPath: savedAvatar,
+            onboardingCompleted: _currentUser!.onboardingCompleted,
+          );
+        }
+      }
       notifyListeners();
     } catch (e) {
       print('Failed to load current user: $e');
@@ -110,21 +134,26 @@ class AuthProvider extends ChangeNotifier {
     return prefs.getBool('onboarding_completed') ?? false;
   }
 
+  /// Reads the locally-saved avatar path (fast, no network).
+  Future<String?> getSavedAvatarPath() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('onboarding_avatar');
+  }
+
   Future<bool> saveOnboardingData({
     DateTime? dateOfBirth,
     double? weight,
     double? height,
     double? dailyProtein,
-    double? dailyCarbs,
+    double? dailyCalories,
+    String? avatarPath,
   }) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final profileData = <String, dynamic>{
-        'onboardingCompleted': true,
-      };
+      final profileData = <String, dynamic>{'onboardingCompleted': true};
 
       // Save locally + build API payload
       if (dateOfBirth != null) {
@@ -143,9 +172,33 @@ class AuthProvider extends ChangeNotifier {
         prefs.setDouble('onboarding_protein', dailyProtein);
         profileData['dailyProtein'] = dailyProtein;
       }
-      if (dailyCarbs != null) {
-        prefs.setDouble('onboarding_carbs', dailyCarbs);
-        profileData['dailyCarbs'] = dailyCarbs;
+      if (dailyCalories != null) {
+        prefs.setDouble('onboarding_calories', dailyCalories);
+        profileData['dailyCalories'] = dailyCalories;
+      }
+      if (avatarPath != null) {
+        await prefs.setString('onboarding_avatar', avatarPath);
+        profileData['avatarPath'] = avatarPath;
+        // Update in-memory user so UI updates immediately
+        if (_currentUser != null) {
+          _currentUser = User(
+            id: _currentUser!.id,
+            email: _currentUser!.email,
+            username: _currentUser!.username,
+            totalDistance: _currentUser!.totalDistance,
+            territorySize: _currentUser!.territorySize,
+            activityStreak: _currentUser!.activityStreak,
+            lastActivity: _currentUser!.lastActivity,
+            createdAt: _currentUser!.createdAt,
+            dateOfBirth: _currentUser!.dateOfBirth,
+            weight: _currentUser!.weight,
+            height: _currentUser!.height,
+            dailyProtein: _currentUser!.dailyProtein,
+            dailyCalories: _currentUser!.dailyCalories,
+            avatarPath: avatarPath,
+            onboardingCompleted: true,
+          );
+        }
       }
 
       // Mark as completed locally

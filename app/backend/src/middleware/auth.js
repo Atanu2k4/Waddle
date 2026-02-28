@@ -12,7 +12,13 @@ const auth = async (req, res, next) => {
     }
     console.log('🔑 AUTH: Token present');
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('❌ JWT_SECRET not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    const decoded = jwt.verify(token, jwtSecret);
     console.log('✅ AUTH: Token verified, userId:', decoded.userId);
     
     const user = await User.findById(decoded.userId);

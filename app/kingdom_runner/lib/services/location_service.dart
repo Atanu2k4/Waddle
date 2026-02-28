@@ -58,12 +58,30 @@ class LocationService {
 
   Future<LatLng?> getCurrentLocation() async {
     try {
+      print('🔍 Fetching GPS location...');
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.bestForNavigation,
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
       );
+      print(
+        '✅ GPS location fetched: ${position.latitude}, ${position.longitude}',
+      );
+      print('   Accuracy: ${position.accuracy}m');
       return LatLng(position.latitude, position.longitude);
     } catch (e) {
-      print('Error getting current location: $e');
+      print('❌ Error getting current location: $e');
+      // Try with last known position as fallback
+      try {
+        Position? lastPosition = await Geolocator.getLastKnownPosition();
+        if (lastPosition != null) {
+          print(
+            '⚠️ Using last known position: ${lastPosition.latitude}, ${lastPosition.longitude}',
+          );
+          return LatLng(lastPosition.latitude, lastPosition.longitude);
+        }
+      } catch (e2) {
+        print('❌ Could not get last known position: $e2');
+      }
       return null;
     }
   }
