@@ -69,9 +69,12 @@ dependencies:
   
   # Environment Variables
   flutter_dotenv: ^5.1.0
+<<<<<<< HEAD
 
   # Fonts
   google_fonts: ^6.2.1
+=======
+>>>>>>> 2ed4fecd9227531f19858abaf36a91a6a7fdffe5
 
 dev_dependencies:
   flutter_test:
@@ -107,6 +110,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/
+<<<<<<< HEAD
     - assets/avatars/3d/
     - assets/avatars/bluey/
     - assets/avatars/memo/
@@ -115,6 +119,8 @@ flutter:
     - assets/avatars/toons/
     - assets/avatars/upstream/
     - assets/avatars/vibrant/
+=======
+>>>>>>> 2ed4fecd9227531f19858abaf36a91a6a7fdffe5
     - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
