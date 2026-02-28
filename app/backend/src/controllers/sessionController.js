@@ -30,7 +30,7 @@ exports.createSession = async (req, res) => {
 exports.completeSession = async (req, res) => {
   try {
     const { path, distance, startTime } = req.body;
-    let session = await ActivitySession.findById(req.params.sessionId);     
+    let session = await ActivitySession.findById(req.params.sessionId);
 
     // If session doesn't exist, create it on the fly
     if (!session) {

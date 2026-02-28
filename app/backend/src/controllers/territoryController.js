@@ -29,13 +29,40 @@ exports.createTerritory = async (req, res) => {
     console.log(`Path length: ${path ? path.length : 0}, Forms loop: ${formsClosedLoop}`);
     console.log(`Path sample (first 3 points):`, path ? path.slice(0, 3) : 'No path');
 
-    if (!path || path.length < 3) {
-      console.log('❌ REJECTED: Not enough points');
-      return res.status(400).json({ error: 'Path needs at least 3 points', path: path });
+    if (!path || path.length < 1) {
+      console.log('❌ REJECTED: No points provided');
+      return res.status(400).json({ error: 'Path needs at least 1 point', path: path });
+    }
+
+    // For single or double points, create a tiny polygon around them
+    let polygonPath = path;
+    if (path.length === 1) {
+      // Create a tiny square around the single point (approx 1 meter)
+      const offset = 0.000009; // ~1 meter in degrees
+      const p = path[0];
+      polygonPath = [
+        { lat: p.lat + offset, lng: p.lng - offset },
+        { lat: p.lat + offset, lng: p.lng + offset },
+        { lat: p.lat - offset, lng: p.lng + offset },
+        { lat: p.lat - offset, lng: p.lng - offset },
+      ];
+      console.log('📍 Single point converted to tiny polygon');
+    } else if (path.length === 2) {
+      // Create a tiny rectangle around the two points
+      const offset = 0.000009; // ~1 meter in degrees
+      const p1 = path[0];
+      const p2 = path[1];
+      polygonPath = [
+        { lat: p1.lat + offset, lng: p1.lng - offset },
+        { lat: p2.lat + offset, lng: p2.lng + offset },
+        { lat: p2.lat - offset, lng: p2.lng + offset },
+        { lat: p1.lat - offset, lng: p1.lng - offset },
+      ];
+      console.log('📍 Two points converted to tiny polygon');
     }
 
     // Calculate area
-    const area = calculatePolygonArea(path);
+    const area = calculatePolygonArea(polygonPath);
     console.log(`Calculated area: ${area.toFixed(6)} m²`);
 
     // No minimum area requirement - accept any size, even 0
@@ -45,7 +72,7 @@ exports.createTerritory = async (req, res) => {
     const territory = new Territory({
       userId: req.user._id,
       username: req.user.username,
-      polygon: path,
+      polygon: polygonPath,
       area,
     });
 

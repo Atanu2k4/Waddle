@@ -66,17 +66,33 @@ class ActivityProvider extends ChangeNotifier {
     _locationService.stopTracking();
     _isTracking = false;
 
-    final isLoop = _locationService.isClosedLoop(_currentPath);
+    // IMPORTANT: Create a copy of the path to prevent it from being cleared
+    final pathCopy = List<LatLng>.from(_currentPath);
+    print('📍 PATH DEBUG: Stopping session with ${pathCopy.length} points');
+    if (pathCopy.isNotEmpty) {
+      print(
+        '📍 First point: (${pathCopy.first.latitude}, ${pathCopy.first.longitude})',
+      );
+      print(
+        '📍 Last point: (${pathCopy.last.latitude}, ${pathCopy.last.longitude})',
+      );
+    }
+
+    final isLoop = _locationService.isClosedLoop(pathCopy);
 
     _currentSession = ActivitySession(
       id: _currentSession!.id,
       userId: _currentSession!.userId,
-      path: _currentPath,
+      path: pathCopy, // Use the copy
       distance: _currentDistance,
       startTime: _currentSession!.startTime,
       endTime: DateTime.now(),
       isCompleted: true,
       formsClosedLoop: isLoop,
+    );
+
+    print(
+      '📦 Session path length after creation: ${_currentSession!.path.length}',
     );
 
     try {
@@ -86,9 +102,9 @@ class ActivityProvider extends ChangeNotifier {
         _currentSession!,
       );
 
-      // If path has enough points, try to create territory
+      // If path has at least 1 point, try to create territory
       String? territoryId;
-      if (_currentPath.length >= 3) {
+      if (pathCopy.isNotEmpty) {
         try {
           // Test connection first
           final isConnected = await _apiService.testConnection();
@@ -103,7 +119,7 @@ class ActivityProvider extends ChangeNotifier {
           }
 
           print(
-            'Attempting to create territory with ${_currentPath.length} points',
+            'Attempting to create territory with ${pathCopy.length} points',
           );
           final territory = await _apiService.createTerritory(_currentSession!);
           print('✅ Territory created successfully: ${territory.id}');
