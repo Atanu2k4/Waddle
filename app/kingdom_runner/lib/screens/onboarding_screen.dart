@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/gemini_service.dart';
 import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -31,24 +32,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _nextPage() {
-    if (_currentPage < _totalPages - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOutCubic,
-      );
-    }
-  }
-
-  void _prevPage() {
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOutCubic,
-      );
-    }
-  }
-
   void _skipAll() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.skipOnboarding();
@@ -57,6 +40,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _completeOnboarding() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Save today's diet entry
+    await GeminiService.saveDietEntry(_dailyProtein, _dailyCarbs);
+
     await authProvider.saveOnboardingData(
       dateOfBirth: _selectedDOB,
       weight: _weight,
@@ -65,6 +52,381 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       dailyCarbs: _dailyCarbs,
     );
     if (mounted) _goToDashboard();
+  }
+
+  Future<void> _showDietInputDialog() async {
+    // Create local controllers inside the dialog
+    final List<TextEditingController> localControllers = List.generate(
+      5,
+      (index) => TextEditingController(),
+    );
+
+    await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        bool isCalculating = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 24,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                constraints: const BoxConstraints(
+                  maxWidth: 500,
+                  maxHeight: 700,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF064E3B).withOpacity(0.95),
+                      const Color(0xFF065F46).withOpacity(0.95),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withOpacity(0.3),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF059669).withOpacity(0.4),
+                      blurRadius: 40,
+                      offset: const Offset(0, 20),
+                      spreadRadius: -5,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF10B981).withOpacity(0.3),
+                                      const Color(0xFF34D399).withOpacity(0.2),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.restaurant_menu,
+                                  color: Color(0xFF6EE7B7),
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'Enter Your 5-Day Diet',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFF0FDF4),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.pop(context, false);
+                                  Future.delayed(
+                                    const Duration(milliseconds: 100),
+                                    () {
+                                      for (var c in localControllers) {
+                                        c.dispose();
+                                      }
+                                    },
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.close,
+                                  size: 20,
+                                  color: Color(0xFFD1FAE5),
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Describe what you ate each day. Be as detailed as possible.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFFA7F3D0),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Scrollable content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: List.generate(5, (index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Day ${index + 1}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF6EE7B7),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller: localControllers[index],
+                                    maxLines: 3,
+                                    keyboardType: TextInputType.multiline,
+                                    textInputAction: TextInputAction.newline,
+                                    autofocus: index == 0,
+                                    enableInteractiveSelection: true,
+                                    style: const TextStyle(
+                                      color: Color(0xFFF0FDF4),
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          'e.g., 2 eggs, oatmeal, chicken salad...',
+                                      hintStyle: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF6EE7B7),
+                                      ),
+                                      filled: true,
+                                      fillColor:
+                                          const Color(0xFF047857).withOpacity(0.3),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: const Color(0xFF10B981)
+                                              .withOpacity(0.3),
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: const Color(0xFF10B981)
+                                              .withOpacity(0.3),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFF34D399),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      contentPadding: const EdgeInsets.all(12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
+
+                    // Bottom button
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: isCalculating
+                          ? const Column(
+                              children: [
+                                CircularProgressIndicator(
+                                  color: Color(0xFF6EE7B7),
+                                  strokeWidth: 3,
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  'Analyzing your diet...',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFFA7F3D0),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  if (localControllers.every(
+                                    (c) => c.text.trim().isEmpty,
+                                  )) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Please enter at least one day of diet',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  setDialogState(() => isCalculating = true);
+
+                                  final foodDays = localControllers
+                                      .map((c) => c.text.trim())
+                                      .where((text) => text.isNotEmpty)
+                                      .toList();
+
+                                  final nutritionData =
+                                      await GeminiService.analyzeFoodItems(
+                                        foodDays,
+                                      );
+
+                                  setDialogState(() => isCalculating = false);
+
+                                  if (nutritionData != null) {
+                                    final days = foodDays.length;
+                                    final avgProtein =
+                                        nutritionData['protein']! / days;
+                                    final avgCarbs =
+                                        nutritionData['carbs']! / days;
+
+                                    // Close dialog first
+                                    Navigator.pop(context, true);
+
+                                    // Dispose controllers after dialog is closed
+                                    Future.delayed(
+                                      const Duration(milliseconds: 100),
+                                      () {
+                                        for (var c in localControllers) {
+                                          c.dispose();
+                                        }
+                                      },
+                                    );
+
+                                    setState(() {
+                                      _dailyProtein = avgProtein.clamp(
+                                        0.0,
+                                        300.0,
+                                      );
+                                      _dailyCarbs = avgCarbs.clamp(0.0, 500.0);
+                                    });
+
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Calculated: ${avgProtein.toStringAsFixed(0)}g protein, ${avgCarbs.toStringAsFixed(0)}g carbs per day',
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Failed to analyze diet. Check console for details or try again.',
+                                          ),
+                                          backgroundColor: Colors.red,
+                                          duration: Duration(seconds: 5),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  shadowColor: Colors.transparent,
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFF10B981).withOpacity(0.9),
+                                        const Color(0xFF059669).withOpacity(0.9),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: const Color(0xFF34D399)
+                                          .withOpacity(0.4),
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF10B981)
+                                            .withOpacity(0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(
+                                        Icons.analytics_outlined,
+                                        color: Color(0xFFD1FAE5),
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Calculate Nutrition',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _goToDashboard() {
@@ -76,10 +438,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           const curve = Curves.easeInOutCubic;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          final tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           return SlideTransition(
-              position: animation.drive(tween), child: child);
+            position: animation.drive(tween),
+            child: child,
+          );
         },
       ),
     );
@@ -115,8 +481,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 // Progress + Skip
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   child: Row(
                     children: [
                       // Progress dots
@@ -125,8 +493,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           children: List.generate(_totalPages, (i) {
                             return Expanded(
                               child: Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 2),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                ),
                                 height: 4,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(2),
@@ -177,6 +546,84 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ],
                   ),
                 ),
+
+                // Navigation Buttons (for web/testing)
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Back Button
+                      if (_currentPage > 0)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            _pageController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          icon: const Icon(Icons.arrow_back, size: 18),
+                          label: const Text('Back'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.9),
+                            foregroundColor: Colors.black87,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 100),
+
+                      // Next/Finish Button
+                      if (_currentPage < _totalPages - 1)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          icon: const Icon(Icons.arrow_forward, size: 18),
+                          label: const Text('Next'),
+                          iconAlignment: IconAlignment.end,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.9),
+                            foregroundColor: Colors.black87,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        )
+                      else
+                        ElevatedButton.icon(
+                          onPressed: _completeOnboarding,
+                          icon: const Icon(Icons.check, size: 18),
+                          label: const Text('Finish'),
+                          iconAlignment: IconAlignment.end,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF007AFF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -201,8 +648,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/birthday-calender.svg',
-                    width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                    width: 56,
+                    height: 56,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -217,10 +668,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'This helps us personalize your experience',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 28),
 
@@ -257,8 +705,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   letterSpacing: -0.408,
                                 ),
                               ),
-                              const Icon(Icons.chevron_right,
-                                  color: Color(0xFFFF3B30), size: 20),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Color(0xFFFF3B30),
+                                size: 20,
+                              ),
                             ],
                           ),
                         ),
@@ -316,8 +767,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/weight-1.svg',
-                    width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                    width: 56,
+                    height: 56,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -332,10 +787,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'We\'ll track your progress over time',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 36),
 
@@ -376,8 +828,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       thumbColor: Colors.white,
                       overlayColor: const Color(0xFF007AFF).withOpacity(0.1),
                       trackHeight: 4,
-                      thumbShape:
-                          const RoundSliderThumbShape(enabledThumbRadius: 14),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 14,
+                      ),
                     ),
                     child: Slider(
                       value: _weight,
@@ -391,14 +844,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('30 kg',
-                            style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 12)),
-                        Text('200 kg',
-                            style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 12)),
+                        Text(
+                          '30 kg',
+                          style: TextStyle(color: Colors.black45, fontSize: 12),
+                        ),
+                        Text(
+                          '200 kg',
+                          style: TextStyle(color: Colors.black45, fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
@@ -429,8 +882,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/height.svg',
-                    width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                    width: 56,
+                    height: 56,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -445,10 +902,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Helps calculate your fitness metrics',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 36),
 
@@ -482,10 +936,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '${(_heightCm / 30.48).floor()}\'${((_heightCm / 2.54) % 12).round()}" ft',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 15, color: Colors.black54),
                   ),
                   const SizedBox(height: 24),
 
@@ -497,8 +948,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       thumbColor: Colors.white,
                       overlayColor: const Color(0xFF007AFF).withOpacity(0.1),
                       trackHeight: 4,
-                      thumbShape:
-                          const RoundSliderThumbShape(enabledThumbRadius: 14),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 14,
+                      ),
                     ),
                     child: Slider(
                       value: _heightCm,
@@ -512,14 +964,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('100 cm',
-                            style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 12)),
-                        Text('250 cm',
-                            style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 12)),
+                        Text(
+                          '100 cm',
+                          style: TextStyle(color: Colors.black45, fontSize: 12),
+                        ),
+                        Text(
+                          '250 cm',
+                          style: TextStyle(color: Colors.black45, fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
@@ -550,8 +1002,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/food-nutrition.svg',
-                    width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                    width: 56,
+                    height: 56,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black87,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -566,10 +1022,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'How much do you consume daily?',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 32),
 
@@ -596,6 +1049,77 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     color: const Color(0xFFFF6B6B),
                     icon: Icons.grain,
                     onChanged: (v) => setState(() => _dailyCarbs = v),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Divider
+                  Container(
+                    height: 1,
+                    color: Colors.black12,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Measure using diet button
+                  GestureDetector(
+                    onTap: _showDietInputDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF059669).withOpacity(0.8),
+                            const Color(0xFF10B981).withOpacity(0.8),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF34D399).withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF059669).withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                            spreadRadius: 0,
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withOpacity(0.2),
+                            blurRadius: 40,
+                            offset: const Offset(0, 16),
+                            spreadRadius: -8,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(
+                            Icons.eco_outlined,
+                            color: Color(0xFFD1FAE5),
+                            size: 22,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Measure using your diet',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 32),
@@ -654,12 +1178,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             trackHeight: 6,
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
           ),
-          child: Slider(
-            value: value,
-            min: min,
-            max: max,
-            onChanged: onChanged,
-          ),
+          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
         ),
       ],
     );
@@ -693,8 +1212,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.check_rounded,
-                        size: 48, color: Colors.white),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 48,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -726,28 +1248,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: Colors.grey.shade300),
+                        border: Border.all(color: Colors.grey.shade300),
                       ),
                       child: Column(
                         children: [
                           if (_selectedDOB != null)
                             _buildSummaryRow(
-                                Icons.cake_outlined,
-                                'Birthday',
-                                '${_getMonthName(_selectedDOB!.month)} ${_selectedDOB!.day}, ${_selectedDOB!.year}'),
+                              Icons.cake_outlined,
+                              'Birthday',
+                              '${_getMonthName(_selectedDOB!.month)} ${_selectedDOB!.day}, ${_selectedDOB!.year}',
+                            ),
                           if (_weight != 70)
                             _buildSummaryRow(
-                                Icons.monitor_weight_outlined,
-                                'Weight',
-                                '${_weight.toStringAsFixed(0)} kg'),
+                              Icons.monitor_weight_outlined,
+                              'Weight',
+                              '${_weight.toStringAsFixed(0)} kg',
+                            ),
                           if (_heightCm != 170)
-                            _buildSummaryRow(Icons.height, 'Height',
-                                '${_heightCm.toStringAsFixed(0)} cm'),
-                          _buildSummaryRow(Icons.egg_outlined, 'Protein',
-                              '${_dailyProtein.toStringAsFixed(0)} g/day'),
-                          _buildSummaryRow(Icons.grain, 'Carbs',
-                              '${_dailyCarbs.toStringAsFixed(0)} g/day'),
+                            _buildSummaryRow(
+                              Icons.height,
+                              'Height',
+                              '${_heightCm.toStringAsFixed(0)} cm',
+                            ),
+                          _buildSummaryRow(
+                            Icons.egg_outlined,
+                            'Protein',
+                            '${_dailyProtein.toStringAsFixed(0)} g/day',
+                          ),
+                          _buildSummaryRow(
+                            Icons.grain,
+                            'Carbs',
+                            '${_dailyCarbs.toStringAsFixed(0)} g/day',
+                          ),
                         ],
                       ),
                     ),
@@ -816,10 +1348,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(width: 10),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black54,
-            ),
+            style: const TextStyle(fontSize: 14, color: Colors.black54),
           ),
           const Spacer(),
           Text(
@@ -893,8 +1422,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   String _getMonthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1];
   }
