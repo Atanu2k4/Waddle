@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           // 1. iPhone 14 Wallpaper
           Image.asset(
-            'assets/Login.png',
+            'assets/bg-final.png',
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
@@ -94,20 +94,20 @@ class _LoginScreenState extends State<LoginScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
           width: 340,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.black.withOpacity(0.05),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withOpacity(0.1),
                 blurRadius: 30,
                 spreadRadius: 2,
                 offset: const Offset(0, 12),
@@ -131,19 +131,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
                 const Text(
                   'Kingdom Runner',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: Colors.black87,
                     letterSpacing: 1.0,
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                const Text(
                   'Claim your territory',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.black54,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -154,10 +154,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Email',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
-                    prefixIcon: Icon(Icons.email_outlined, size: 20, color: Colors.white.withOpacity(0.6)),
+                    hintStyle: const TextStyle(color: Colors.black45, fontSize: 14),
+                    prefixIcon: const Icon(Icons.email_outlined, size: 20, color: Colors.black45),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
+                    fillColor: Colors.grey.shade100,
                     contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -165,14 +165,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.white.withOpacity(0.5), width: 1.5),
+                      borderSide: const BorderSide(color: Color(0xFF007AFF), width: 1.5),
                     ),
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Enter email';
@@ -188,10 +188,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
-                    prefixIcon: Icon(Icons.lock_outline, size: 20, color: Colors.white.withOpacity(0.6)),
+                    hintStyle: const TextStyle(color: Colors.black45, fontSize: 14),
+                    prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Colors.black45),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
+                    fillColor: Colors.grey.shade100,
                     contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -199,14 +199,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.white.withOpacity(0.5), width: 1.5),
+                      borderSide: const BorderSide(color: Color(0xFF007AFF), width: 1.5),
                     ),
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Enter password';
                     return null;
@@ -282,18 +282,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: RichText(
                     text: TextSpan(
                       text: 'Don\'t have an account? ',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                      style: const TextStyle(
+                        color: Colors.black54,
                         fontSize: 13,
                       ),
                       children: const [
                         TextSpan(
                           text: 'Register',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF007AFF),
                             fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
                           ),
                         ),
                       ],

@@ -94,7 +94,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           // Background
           Image.asset(
-            'assets/Login.png',
+            'assets/bg-final.png',
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
@@ -202,7 +202,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   SvgPicture.asset(
                     'assets/birthday-calender.svg',
                     width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -210,16 +210,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Colors.black87,
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'This helps us personalize your experience',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -317,7 +317,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   SvgPicture.asset(
                     'assets/weight-1.svg',
                     width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -325,16 +325,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Colors.black87,
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'We\'ll track your progress over time',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 36),
@@ -349,7 +349,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         style: const TextStyle(
                           fontSize: 64,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: Colors.black87,
                           height: 1,
                         ),
                       ),
@@ -360,7 +360,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white70,
+                            color: Colors.black54,
                           ),
                         ),
                       ),
@@ -388,16 +388,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('30 kg',
                             style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.black45,
                                 fontSize: 12)),
                         Text('200 kg',
                             style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.black45,
                                 fontSize: 12)),
                       ],
                     ),
@@ -430,7 +430,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   SvgPicture.asset(
                     'assets/height.svg',
                     width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -438,16 +438,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Colors.black87,
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Helps calculate your fitness metrics',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 36),
@@ -462,7 +462,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         style: const TextStyle(
                           fontSize: 64,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: Colors.black87,
                           height: 1,
                         ),
                       ),
@@ -473,7 +473,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white70,
+                            color: Colors.black54,
                           ),
                         ),
                       ),
@@ -482,9 +482,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '${(_heightCm / 30.48).floor()}\'${((_heightCm / 2.54) % 12).round()}" ft',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 15,
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -509,16 +509,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('100 cm',
                             style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.black45,
                                 fontSize: 12)),
                         Text('250 cm',
                             style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.black45,
                                 fontSize: 12)),
                       ],
                     ),
@@ -551,7 +551,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   SvgPicture.asset(
                     'assets/food-nutrition.svg',
                     width: 56, height: 56,
-                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                    colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -559,16 +559,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Colors.black87,
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'How much do you consume daily?',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -630,7 +630,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: Colors.black87,
               ),
             ),
             const Spacer(),
@@ -648,7 +648,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         SliderTheme(
           data: SliderThemeData(
             activeTrackColor: color,
-            inactiveTrackColor: Colors.white.withOpacity(0.15),
+            inactiveTrackColor: Colors.black12,
             thumbColor: Colors.white,
             overlayColor: color.withOpacity(0.1),
             trackHeight: 6,
@@ -702,17 +702,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: Colors.black87,
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
+                  const Text(
                     'Your profile is ready.\nLet\'s start conquering!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.black54,
                       height: 1.5,
                     ),
                   ),
@@ -724,10 +724,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: Colors.white.withOpacity(0.15)),
+                            color: Colors.grey.shade300),
                       ),
                       child: Column(
                         children: [
@@ -812,13 +812,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.white.withOpacity(0.6)),
+          Icon(icon, size: 18, color: Colors.black54),
           const SizedBox(width: 10),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.black54,
             ),
           ),
           const Spacer(),
@@ -827,7 +827,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: Colors.black87,
             ),
           ),
         ],
@@ -844,20 +844,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.black.withOpacity(0.05),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 30,
                   spreadRadius: 2,
                   offset: const Offset(0, 12),
@@ -872,21 +872,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildSwipeHint() {
-    return Row(
+    return const Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.swipe, size: 18, color: Colors.white.withOpacity(0.4)),
-        const SizedBox(width: 8),
+        Icon(Icons.swipe, size: 18, color: Colors.black45),
+        SizedBox(width: 8),
         Text(
           'Swipe to continue',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.black45,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 4),
-        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white.withOpacity(0.4)),
+        SizedBox(width: 4),
+        Icon(Icons.arrow_forward_ios, size: 12, color: Colors.black45),
       ],
     );
   }

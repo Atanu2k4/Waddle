@@ -68,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         children: [
           // Background wallpaper (same as login)
           Image.asset(
-            'assets/Login.png',
+            'assets/bg-final.png',
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
@@ -108,12 +108,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: IconButton(
                     icon: Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
                       ),
-                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                      child: const Icon(Icons.arrow_back, color: Colors.black87, size: 20),
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -132,20 +132,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
           width: 340,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.black.withOpacity(0.05),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withOpacity(0.1),
                 blurRadius: 30,
                 spreadRadius: 2,
                 offset: const Offset(0, 12),
@@ -169,16 +169,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: Colors.black87,
                     letterSpacing: 1.0,
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                const Text(
                   'Join the kingdom',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.black54,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -191,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Email',
                     icon: Icons.email_outlined,
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Enter email';
@@ -208,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Username',
                     icon: Icons.person_outline,
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Enter username';
                     if (value.length < 3) return 'Min 3 characters';
@@ -225,7 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Password',
                     icon: Icons.lock_outline,
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Enter password';
                     if (value.length < 6) return 'Min 6 characters';
@@ -242,7 +242,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Confirm Password',
                     icon: Icons.lock_outline,
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Confirm password';
                     if (value != _passwordController.text) return 'Passwords don\'t match';
@@ -303,20 +303,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: RichText(
-                    text: TextSpan(
+                    text: const TextSpan(
                       text: 'Already have an account? ',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.black54,
                         fontSize: 13,
                       ),
-                      children: const [
+                      children: [
                         TextSpan(
                           text: 'Sign In',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF007AFF),
                             fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
                           ),
                         ),
                       ],
@@ -334,10 +332,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   InputDecoration _inputDecoration({required String hint, required IconData icon}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
-      prefixIcon: Icon(icon, size: 20, color: Colors.white.withOpacity(0.6)),
+      hintStyle: const TextStyle(color: Colors.black45, fontSize: 14),
+      prefixIcon: Icon(icon, size: 20, color: Colors.black45),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.1),
+      fillColor: Colors.grey.shade100,
       contentPadding: const EdgeInsets.symmetric(vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -345,11 +343,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
+        borderSide: BorderSide(color: Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.5), width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFF007AFF), width: 1.5),
       ),
     );
   }
