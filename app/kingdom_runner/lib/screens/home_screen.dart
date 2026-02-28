@@ -45,11 +45,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Listen to location updates
       _locationService.startTracking((newLocation) {
-        if (mounted &&
-            !Provider.of<ActivityProvider>(context, listen: false).isTracking) {
+        if (mounted) {
           setState(() {
             _currentPosition = newLocation;
           });
+
+          // Auto-follow user during tracking
+          final isTracking = Provider.of<ActivityProvider>(
+            context,
+            listen: false,
+          ).isTracking;
+          if (isTracking) {
+            _mapController.move(newLocation, _mapController.camera.zoom);
+          }
         }
       });
     } else {
@@ -167,9 +175,9 @@ class _HomeScreenState extends State<HomeScreen> {
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _currentPosition,
-              initialZoom: 15,
-              minZoom: 5,
-              maxZoom: 18,
+              initialZoom: 17,
+              minZoom: 3,
+              maxZoom: 22,
             ),
             children: [
               TileLayer(

@@ -25,10 +25,13 @@ class ApiService {
     await storage.delete(key: 'auth_token');
   }
 
-  Map<String, String> get headers => {
-    'Content-Type': 'application/json',
-    if (_token != null) 'Authorization': 'Bearer $_token',
-  };
+  Future<Map<String, String>> getHeaders() async {
+    await token; // Ensure token is loaded
+    return {
+      'Content-Type': 'application/json',
+      if (_token != null) 'Authorization': 'Bearer $_token',
+    };
+  }
 
   // Auth endpoints
   Future<Map<String, dynamic>> register(
@@ -82,6 +85,7 @@ class ApiService {
   // User endpoints
   Future<User> getCurrentUser() async {
     await token; // Ensure token is loaded
+    final headers = await getHeaders();
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.userEndpoint}/me'),
       headers: headers,
@@ -97,6 +101,7 @@ class ApiService {
   // Territory endpoints
   Future<List<Territory>> getTerritories() async {
     await token;
+    final headers = await getHeaders();
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.territoryEndpoint}'),
       headers: headers,
@@ -112,6 +117,7 @@ class ApiService {
 
   Future<Territory> createTerritory(ActivitySession session) async {
     await token;
+    final headers = await getHeaders();
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.territoryEndpoint}'),
       headers: headers,
@@ -128,6 +134,7 @@ class ApiService {
   // Session endpoints
   Future<ActivitySession> createSession(ActivitySession session) async {
     await token;
+    final headers = await getHeaders();
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.sessionEndpoint}'),
       headers: headers,
@@ -146,6 +153,7 @@ class ApiService {
     ActivitySession session,
   ) async {
     await token;
+    final headers = await getHeaders();
     final response = await http.put(
       Uri.parse(
         '${ApiConfig.baseUrl}${ApiConfig.sessionEndpoint}/$sessionId/complete',
@@ -164,6 +172,7 @@ class ApiService {
   // Leaderboard endpoints
   Future<List<User>> getLeaderboard({String type = 'territory'}) async {
     await token;
+    final headers = await getHeaders();
     final response = await http.get(
       Uri.parse(
         '${ApiConfig.baseUrl}${ApiConfig.leaderboardEndpoint}?type=$type',
