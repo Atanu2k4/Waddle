@@ -20,22 +20,26 @@ exports.getTerritories = async (req, res) => {
 // Create new territory
 exports.createTerritory = async (req, res) => {
   try {
+    console.log('🌍 CREATE TERRITORY REQUEST RECEIVED');
+    console.log('📦 Full request body:', JSON.stringify(req.body, null, 2));
+    
     const { path, formsClosedLoop } = req.body;
 
     console.log(`Creating territory for user ${req.user.username}`);
     console.log(`Path length: ${path ? path.length : 0}, Forms loop: ${formsClosedLoop}`);
+    console.log(`Path sample (first 3 points):`, path ? path.slice(0, 3) : 'No path');
 
     if (!path || path.length < 3) {
+      console.log('❌ REJECTED: Not enough points');
       return res.status(400).json({ error: 'Path needs at least 3 points', path: path });
     }
 
     // Calculate area
     const area = calculatePolygonArea(path);
-    console.log(`Calculated area: ${area.toFixed(2)} m²`);
+    console.log(`Calculated area: ${area.toFixed(6)} m²`);
 
-    if (area < 1) {
-      return res.status(400).json({ error: 'Territory area too small (minimum 1 m²)', area });
-    }
+    // No minimum area requirement - accept any size, even 0
+    console.log(`✅ Area accepted: ${area.toFixed(6)} m²`);
 
     // Create territory even if not a perfect closed loop
     const territory = new Territory({

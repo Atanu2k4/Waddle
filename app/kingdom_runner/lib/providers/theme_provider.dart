@@ -60,10 +60,7 @@ class ThemeProvider with ChangeNotifier {
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        textStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
       ),
     ),
     textTheme: const TextTheme(
@@ -72,14 +69,8 @@ class ThemeProvider with ChangeNotifier {
         fontWeight: FontWeight.bold,
         color: Color(0xFF18181B),
       ),
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        color: Color(0xFF18181B),
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        color: Color(0xFF52525B),
-      ),
+      bodyLarge: TextStyle(fontSize: 16, color: Color(0xFF18181B)),
+      bodyMedium: TextStyle(fontSize: 14, color: Color(0xFF52525B)),
     ),
   );
 
@@ -120,10 +111,7 @@ class ThemeProvider with ChangeNotifier {
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        textStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
       ),
     ),
     textTheme: const TextTheme(
@@ -132,14 +120,8 @@ class ThemeProvider with ChangeNotifier {
         fontWeight: FontWeight.bold,
         color: Color(0xFFFAFAFA),
       ),
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        color: Color(0xFFFAFAFA),
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        color: Color(0xFFA1A1AA),
-      ),
+      bodyLarge: TextStyle(fontSize: 16, color: Color(0xFFFAFAFA)),
+      bodyMedium: TextStyle(fontSize: 14, color: Color(0xFFA1A1AA)),
     ),
   );
 }
