@@ -31,6 +31,7 @@ const StyledWrapper = styled.div`
     border-radius: 18px;
     overflow: hidden;
     cursor: pointer !important;
+    text-decoration: none;
     animation: ${pulse} 2.8s ease-in-out infinite;
     transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
                 background 0.2s ease;
@@ -134,7 +135,7 @@ const StyledWrapper = styled.div`
 export function DownloadButton() {
   return (
     <StyledWrapper>
-      <button className="cta-btn" type="button">
+      <a href="https://drive.google.com/drive/folders/137GuT_BcmqmQyyOlTVwn508Pw_9RgTBp?usp=sharing" className="cta-btn" target="_blank" rel="noopener noreferrer">
         <span className="cta-text-group">
           <span className="cta-label">Download</span>
         </span>
@@ -145,7 +146,7 @@ export function DownloadButton() {
             <path d="M31.436,34.063H3.564A3.318,3.318,0,0,1,.25,30.749V22.011a1.25,1.25,0,0,1,2.5,0v8.738a.815.815,0,0,0,.814.814H31.436a.815.815,0,0,0,.814-.814V22.011a1.25,1.25,0,1,1,2.5,0v8.738A3.318,3.318,0,0,1,31.436,34.063Z" />
           </svg>
         </span>
-      </button>
+      </a>
     </StyledWrapper>
   );
 }

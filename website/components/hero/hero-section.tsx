@@ -46,14 +46,17 @@ export function HeroSection() {
             {/* ── Background video ──────────────────────────────── */}
             <video
                 ref={videoRef}
-                src="/Sky_changing.mp4"
                 autoPlay
                 muted
                 loop
                 playsInline
+                preload="auto"
+                poster="/sky-poster.jpg"
                 className="absolute inset-0 object-cover object-center w-full h-full"
                 style={{ opacity: 0, willChange: "opacity" }}
-            />
+            >
+                <source src="/Sky_changing.mp4" type="video/mp4" />
+            </video>
 
             {/* ── Dark gradient overlay so text stays legible ───── */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black z-[1]" />
