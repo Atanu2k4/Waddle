@@ -72,6 +72,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preload the hero background video so it starts downloading before the DOM is parsed */}
+        <link rel="preload" href="/Sky_changing.mp4" as="video" type="video/mp4" />
+      </head>
       <body
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${roboto.variable} ${greatVibes.variable} ${cinzel.variable} ${dancing.variable} ${abril.variable} antialiased bg-black`}
